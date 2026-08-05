@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block title %}Shopping List - Meal Planner{% endblock %}
+{% block content %}
+
+<h1 style="margin-bottom:8px;">Your Shopping List 🛒</h1>
+<p class="text-muted" style="margin-bottom:24px;">
+    Based on your current 7-day meal plan.
+    <span class="badge-mango">Estimated total: ₦{{ shopping_data.total_estimated_cost }}</span>
+</p>
+
+{% for tier, items in shopping_data.grouped.items %}
+    <div class="card">
+        <h2 style="text-transform:capitalize;">{{ tier }} items</h2>
+        {% for item in items %}
+            <div class="meal-item">
+                <span>
+                    <strong>{{ item.ingredient }}</strong>
+                    — {{ item.quantity }}
+                    <span class="text-muted">(for {{ item.for_dish }})</span>
+                    {% if item.flagged %}
+                        <span style="color:var(--danger); font-size:0.8rem;">⚠ may not be available everywhere</span>
+                    {% endif %}
+                </span>
+                <span class="badge-mango">₦{{ item.cost_naira }}</span>
+            </div>
+        {% endfor %}
+    </div>
+{% empty %}
+    <div class="card text-muted">No ingredients found for this plan.</div>
+{% endfor %}
+
+<a href="{% url 'dashboard' %}" class="btn-outline" style="display:inline-block; margin-top:12px;">← Back to Dashboard</a>
+
+{% endblock %}

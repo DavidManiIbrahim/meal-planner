@@ -1,0 +1,217 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard - Meal Planner{% endblock %}
+{% block content %}
+
+<h1 id="greeting" style="margin-bottom:24px;"></h1>
+
+<div class="card">
+    <h2>Your Nutrition Analysis</h2>
+    <div id="typewriter-box" style="min-height:160px; font-size:0.98rem; line-height:1.7;"></div>
+</div>
+
+<script>
+    // Playful rotating greeting
+    (function() {
+        var hour = new Date().getHours();
+        var timeGreeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+        var username = "{{ request.user.username }}";
+        var playful = [
+            timeGreeting + ", " + username + "! Ready to eat well today? 🍽️",
+            "Hey " + username + "! Your kitchen's expert is standing by 👨‍🍳",
+            timeGreeting + ", " + username + "! Let's fuel up right 🥗"
+        ];
+        document.getElementById('greeting').textContent = playful[Math.floor(Math.random() * playful.length)];
+    })();
+
+    // Typewriter nutrition analysis with plain-language BMI explainer
+    (function() {
+        var bmi = "{{ analysis.bmi }}";
+        var category = "{{ analysis.bmi_category }}";
+        var calories = "{{ analysis.daily_calories }}";
+        var protein = "{{ analysis.protein_grams }}";
+        var carbs = "{{ analysis.carb_grams }}";
+        var fat = "{{ analysis.fat_grams }}";
+        var advice = [{% for tip in analysis.advice %}"{{ tip|escapejs }}"{% if not forloop.last %}, {% endif %}{% endfor %}];
+
+        var bmiExplainer = {
+            "underweight": "means your weight is a little low for your height - think of it as your body having less fuel reserve than it needs.",
+            "normal": "means your weight is right in the healthy range for your height - nice balance, nothing to fix here.",
+            "overweight": "means your weight is a bit higher than ideal for your height - not alarming, just a signal to gently adjust.",
+            "obese": "means your weight is significantly higher than what's healthy for your height - worth taking seriously, but very manageable with the right plan."
+        };
+
+        var explainerLine = "Your BMI (Body Mass Index) is a simple number computed from your height and weight - it's how we estimate whether your weight is in a healthy range. A BMI of " + bmi + " " + (bmiExplainer[category] || "");
+
+        var lines = [
+            explainerLine,
+            "Based on this, your daily calorie target is " + calories + " kcal - that's the total energy your meals should add up to each day.",
+            "We've split that into " + protein + "g protein, " + carbs + "g carbs, and " + fat + "g fat - a balance tuned to your goal."
+        ];
+
+        for (var i = 0; i < advice.length; i++) {
+            lines.push("💡 " + advice[i]);
+        }
+
+        var box = document.getElementById('typewriter-box');
+        var lineIndex = 0;
+
+        function typeLine() {
+            if (lineIndex >= lines.length) return;
+            var p = document.createElement('p');
+            p.style.margin = "0 0 10px 0";
+            box.appendChild(p);
+            var text = lines[lineIndex];
+            var charIndex = 0;
+
+            function typeChar() {
+                if (charIndex < text.length) {
+                    p.textContent += text.charAt(charIndex);
+                    charIndex++;
+                    setTimeout(typeChar, 12);
+                } else {
+                    lineIndex++;
+                    setTimeout(typeLine, 250);
+                }
+            }
+            typeChar();
+        }
+
+        typeLine();
+    }) ();
+</script>
+
+{% if plan %}
+    <div class="card">
+        <h2>Your 7-Day Meal Plan</h2>
+
+{% for day_num in "1234567" %}
+    <div style="animation: fadeUp 0.5s ease both; animation-delay: {{ forloop.counter0 }}00ms;">
+        <div class="day-heading">Day {{ day_num }}</div>
+        {% for entry in plan.entries.all %}
+            {% if entry.day_number|stringformat:"s" == day_num %}
+                <div class="meal-item" style="flex-direction:column; align-items:stretch; gap:6px;">
+                    <div style="display:flex; justify-content:space-between;">
+                        <span><strong>{{ entry.get_meal_type_display }}:</strong> {{ entry.dish.name }}</span>
+                        <span class="badge-mango">{{ entry.dish.calories }} kcal</span>
+                    </div>
+                    <div class="star-widget" data-dish-id="{{ entry.dish.id }}" style="display:flex; gap:4px; font-size:1.1rem; cursor:pointer;">
+                        <span class="star" data-value="1">☆</span>
+                        <span class="star" data-value="2">☆</span>
+                        <span class="star" data-value="3">☆</span>
+                        <span class="star" data-value="4">☆</span>
+                        <span class="star" data-value="5">☆</span>
+                    </div>
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+{% endfor %}
+
+        <a href="{% url 'shopping_list' %}" class="btn-outline" style="display:inline-block; margin-bottom:12px;">View Shopping List 🛒</a>
+
+        <form method="post" action="{% url 'generate_plan' %}" style="margin-top:20px;">
+            {% csrf_token %}
+            <button type="submit" class="btn-primary">Regenerate Plan</button>
+        </form>
+    </div>
+{% else %}
+    <div class="card" style="text-align:center;">
+        <p class="text-muted" style="font-size:1rem;">You don't have a meal plan yet.</p>
+        <form method="post" action="{% url 'generate_plan' %}">
+            {% csrf_token %}
+            <button type="submit" class="btn-primary">Generate My Meal Plan 🍽️</button>
+        </form>
+    </div>
+{% endif %}
+<div id="generating-overlay" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(15,21,18,0.92); z-index:50; align-items:center; justify-content:center; flex-direction:column;"> </div>
+    <div style="font-size:2.5rem; margin-bottom:20px; animation: bob 1s ease-in-out infinite;">🧠</div>
+    <h3 style="color:var(--text); margin-bottom:20px;">Building your personalized plan...</h3>
+    <div id="factor-list" style="display:flex; flex-direction:column; gap:10px; min-width:280px;">
+        <div class="factor-row" data-label="Physiological needs">⏳ Physiological needs</div>
+        <div class="factor-row" data-label="Taste preferences">⏳ Taste preferences</div>
+        <div class="factor-row" data-label="Cultural characteristics">⏳ Cultural characteristics</div>
+        <div class="factor-row" data-label="Food availability">⏳ Food availability</div>
+        <div class="factor-row" data-label="Caloric requirements">⏳ Caloric requirements</div>
+        <div class="factor-row" data-label="Economic constraints">⏳ Economic constraints</div>
+    </div>
+</div>
+
+<style>
+    .factor-row {
+        color: var(--text-muted);
+        font-size: 0.95rem;
+        padding: 8px 14px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        transition: all 0.3s ease;
+    }
+    .factor-row.done {
+        color: var(--emerald);
+        border-color: var(--emerald);
+        background: rgba(34,197,94,0.08);
+    }
+</style>
+<script>
+(function() {
+    const forms = document.querySelectorAll('form[action*="generate-plan"], form[action*="generate_plan"]');
+    forms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const overlay = document.getElementById('generating-overlay');
+            overlay.style.display = 'flex';
+            const rows = document.querySelectorAll('.factor-row');
+            let i = 0;
+            const interval = setInterval(() => {
+                if (i < rows.length) {
+                    rows[i].textContent = '✅ ' + rows[i].dataset.label;
+                    rows[i].classList.add('done');
+                    i++;
+                } else {
+                    clearInterval(interval);
+                    setTimeout(() => form.submit(), 300);
+                }
+            }, 350);
+        });
+    });
+})();
+</script>
+
+<script>
+(function() {
+    function getCookie(name) {
+        var value = "; " + document.cookie;
+        var parts = value.split("; " + name + "=");
+        if (parts.length === 2) return parts.pop().split(";").shift();
+        return "";
+    }
+
+    var widgets = document.querySelectorAll('.star-widget');
+
+    widgets.forEach(function(widget) {
+        var stars = widget.querySelectorAll('.star');
+
+        stars.forEach(function(star) {
+            star.addEventListener('click', function() {
+                var value = parseInt(star.dataset.value);
+                var dishId = widget.dataset.dishId;
+
+                stars.forEach(function(s) {
+                    s.textContent = parseInt(s.dataset.value) <= value ? '★' : '☆';
+                    s.style.color = parseInt(s.dataset.value) <= value ? 'var(--mango)' : 'var(--text-muted)';
+                });
+
+                fetch("{% url 'rate_dish' %}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: 'dish_id=' + dishId + '&stars=' + value
+                });
+            });
+        });
+    });
+})();
+</script>
+
+{% endblock %}

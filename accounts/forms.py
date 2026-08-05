@@ -1,0 +1,25 @@
+from django import forms
+from django.contrib.auth.models import User
+from django.contrib.auth.forms import UserCreationForm
+from .models import Profile
+
+
+class RegisterForm(UserCreationForm):
+    email = forms.EmailField(required=True)
+
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'password1', 'password2']
+
+
+class ProfileForm(forms.ModelForm):
+    class Meta:
+        model = Profile
+        fields = [
+            'age', 'gender', 'weight_kg', 'height_cm', 'goal',
+            'swallow_preference', 'spice_level', 'protein_preference',
+            'cultural_region', 'budget_level',
+            'allergy_gluten', 'allergy_nuts', 'allergy_fish',
+            'allergy_eggs', 'allergy_dairy', 'allergy_soy',
+        ]
+        

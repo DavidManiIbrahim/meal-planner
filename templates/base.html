@@ -1,0 +1,253 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}Meal Planner{% endblock %}</title>
+<style>
+    :root {
+        --bg: #0f1512;
+        --bg-card: #161f1a;
+        --bg-card-hover: #1c2620;
+        --border: #24312a;
+        --text: #e8ede9;
+        --text-muted: #8a988f;
+        --emerald: #22c55e;
+        --emerald-dim: #16a34a;
+        --mango: #f5a623;
+        --blue: #38bdf8;
+        --danger: #f87171;
+        --radius: 16px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+        margin: 0;
+        font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        overflow-x: hidden;
+        position: relative;
+    }
+
+    /* Floating background food */
+    .food-bg {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 0;
+        overflow: hidden;
+    }
+    .food-bg span {
+        position: absolute;
+        font-size: 2rem;
+        opacity: 0.25;
+        animation: floatUp linear infinite;
+    }
+    @keyframes floatUp {
+        0% { transform: translateY(110vh) rotate(0deg); }
+        100% { transform: translateY(-10vh) rotate(360deg); }
+    }
+
+    a { color: var(--blue); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .navbar {
+        position: relative;
+        z-index: 1;
+        background: linear-gradient(90deg, #10241a, #0f1512 70%);
+        border-bottom: 1px solid var(--border);
+        padding: 16px 0;
+    }
+
+    .navbar-inner {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 0 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .brand {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .brand-icon {
+        display: inline-block;
+        animation: bob 3s ease-in-out infinite;
+    }
+
+    @keyframes bob {
+        0%, 100% { transform: translateY(0) rotate(0deg); }
+        50% { transform: translateY(-4px) rotate(6deg); }
+    }
+
+    .nav-user { display: flex; align-items: center; gap: 14px; font-size: 0.9rem; color: var(--text-muted); }
+
+    .btn-outline {
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 6px 14px;
+        border-radius: 999px;
+        font-size: 0.85rem;
+        transition: all 0.2s ease;
+    }
+    .btn-outline:hover { border-color: var(--emerald); text-decoration: none; background: rgba(34,197,94,0.08); }
+
+    .container {
+        position: relative;
+        z-index: 1;
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 40px 20px;
+        animation: pageIn 0.4s ease both;
+    }
+
+    @keyframes pageIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 28px;
+        margin-bottom: 24px;
+        animation: fadeUp 0.5s ease both;
+    }
+
+    @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(12px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .card h2 { margin-top: 0; color: var(--text); }
+
+    label {
+        display: block;
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        margin-bottom: 6px;
+        margin-top: 16px;
+    }
+
+    input, select {
+        width: 100%;
+        background: #0d1310;
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 10px 12px;
+        border-radius: 10px;
+        font-size: 0.95rem;
+        transition: border-color 0.2s ease;
+    }
+    input:focus, select:focus {
+        outline: none;
+        border-color: var(--emerald);
+        box-shadow: 0 0 0 3px rgba(34,197,94,0.15);
+    }
+    .checkbox-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+    .checkbox-row input { width: auto; }
+    .checkbox-row label { margin: 0; color: var(--text); }
+
+    .btn-primary {
+        display: inline-block;
+        width: 100%;
+        background: linear-gradient(90deg, var(--emerald), var(--emerald-dim));
+        color: #06210f;
+        font-weight: 700;
+        border: none;
+        padding: 12px;
+        border-radius: 10px;
+        font-size: 1rem;
+        cursor: pointer;
+        margin-top: 20px;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(34,197,94,0.3);
+    }
+    .btn-primary:active { transform: translateY(0) scale(0.98); }
+
+    .text-error { color: var(--danger); font-size: 0.8rem; margin-top: 4px; }
+    .text-muted { color: var(--text-muted); font-size: 0.9rem; }
+
+    .badge-mango { color: var(--mango); font-weight: 600; }
+    .badge-blue { color: var(--blue); font-weight: 600; }
+
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 24px; }
+    @media (max-width: 640px) { .form-grid { grid-template-columns: 1fr; } }
+
+    .meal-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #0d1310;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 12px 16px;
+        margin-bottom: 8px;
+        transition: border-color 0.2s ease, transform 0.15s ease;
+    }
+    .meal-item:hover { border-color: var(--emerald); transform: translateX(4px); }
+
+    .day-heading {
+        color: var(--emerald);
+        margin-top: 28px;
+        margin-bottom: 10px;
+        font-size: 1.05rem;
+        border-left: 3px solid var(--emerald);
+        padding-left: 10px;
+    }
+</style>
+</head>
+<body>
+    <div class="food-bg" id="food-bg"></div>
+
+    <nav class="navbar">
+        <div class="navbar-inner">
+            <a class="brand" href="{% if user.is_authenticated %}{% url 'dashboard' %}{% else %}{% url 'login' %}{% endif %}">
+                <span class="brand-icon">🍲</span> Meal Planner
+            </a>
+            {% if user.is_authenticated %}
+                <div class="nav-user">
+                    <span>Hi, {{ user.username }}</span>
+                    <a class="btn-outline" href="{% url 'logout' %}">Logout</a>
+                </div>
+            {% endif %}
+        </div>
+    </nav>
+
+    <div class="container">
+        {% block content %}
+        {% endblock %}
+    </div>
+
+    <script>
+        const foods = ['🍚','🍲','🍞','🍌','🥜','🍗','🌽','🥑','🍅','🥔'];
+        const bg = document.getElementById('food-bg');
+        for (let i = 0; i < 14; i++) {
+            const el = document.createElement('span');
+            el.textContent = foods[Math.floor(Math.random() * foods.length)];
+            el.style.left = Math.random() * 100 + 'vw';
+            el.style.fontSize = (1.2 + Math.random() * 1.8) + 'rem';
+            el.style.animationDuration = (18 + Math.random() * 20) + 's';
+            el.style.animationDelay = (Math.random() * 20) + 's';
+            bg.appendChild(el);
+        }
+    </script>
+</body>
+</html>

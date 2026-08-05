@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% block title %}Register - Meal Planner{% endblock %}
+{% block content %}
+<div class="card" style="max-width: 440px; margin: 0 auto;">
+    <h2>Create Your Account</h2>
+    <p class="text-muted">Start building your personalized meal plan.</p>
+    <form method="post">
+        {% csrf_token %}
+        {% for error in form.non_field_errors %}
+            <div class="text-error" style="margin-bottom:12px;">{{ error }}</div>
+        {% endfor %}
+        {% for field in form %}
+            <label>{{ field.label }}</label>
+            {{ field }}
+            {% if field.help_text %}
+                <div class="text-muted" style="font-size:0.75rem; margin-top:4px;">{{ field.help_text }}</div>
+            {% endif %}
+            {% for error in field.errors %}
+                <div class="text-error">{{ error }}</div>
+            {% endfor %}
+        {% endfor %}
+
+        <div class="card" style="padding:20px; margin-top:16px; background:#0d1310;">
+            <label style="margin-top:0;">Quick check — are you human? 🧑‍🍳</label>
+            <p class="text-muted" id="captcha-instruction" style="margin-top:0;"></p>
+            <div id="captcha-grid" style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;"></div>
+            <input type="hidden" name="human_check" id="human_check" value="">
+            <div id="captcha-status" style="margin-top:8px; font-size:0.85rem;"></div>
+        </div>
+
+        <button type="submit" class="btn-primary">Register</button>
+    </form>
+    <p class="text-muted" style="margin-top:16px; text-align:center;">
+        Already have an account? <a href="{% url 'login' %}">Login here</a>
+    </p>
+</div>
+
+<script>
+(function() {
+    var foods = [
+        { emoji: '🍚', name: 'Jollof Rice' },
+        { emoji: '🍲', name: 'Egusi Soup' },
+        { emoji: '🍞', name: 'Bread' },
+        { emoji: '🍌', name: 'Plantain' },
+        { emoji: '🥜', name: 'Groundnut' },
+        { emoji: '🍗', name: 'Chicken' }
+    ];
+
+    var shuffled = foods.slice().sort(function() { return Math.random() - 0.5; });
+    var target = shuffled[Math.floor(Math.random() * shuffled.length)];
+
+    document.getElementById('captcha-instruction').textContent = 'Click the ' + target.name;
+
+    var grid = document.getElementById('captcha-grid');
+    var status = document.getElementById('captcha-status');
+    var hiddenInput = document.getElementById('human_check');
+    var submitBtn = document.querySelector('button[type="submit"]');
+
+    submitBtn.disabled = true;
+    submitBtn.style.opacity = '0.5';
+    submitBtn.style.cursor = 'not-allowed';
+
+    shuffled.forEach(function(food) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = food.emoji;
+        btn.style.cssText = 'font-size:1.8rem; background:#161f1a; border:1px solid #24312a; border-radius:10px; width:56px; height:56px; cursor:pointer; transition:transform 0.15s ease, border-color 0.15s ease;';
+        btn.onmouseenter = function() { btn.style.transform = 'scale(1.1)'; };
+        btn.onmouseleave = function() { btn.style.transform = 'scale(1)'; };
+
+        btn.onclick = function() {
+            if (food.name === target.name) {
+                hiddenInput.value = 'verified';
+                status.textContent = '✅ Verified — you may register now.';
+                status.style.color = '#22c55e';
+                submitBtn.disabled = false;
+                submitBtn.style.opacity = '1';
+                submitBtn.style.cursor = 'pointer';
+                Array.from(grid.children).forEach(function(b) { b.disabled = true; });
+            } else {
+                status.textContent = '❌ Not quite — try again.';
+                status.style.color = '#f87171';
+                btn.style.transform = 'scale(0.9)';
+                setTimeout(function() { btn.style.transform = 'scale(1)'; }, 150);
+            }
+        };
+
+        grid.appendChild(btn);
+    });
+})();
+</script>
+{% endblock %}
