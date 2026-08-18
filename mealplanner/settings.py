@@ -24,7 +24,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config('SECRET_KEY')
 DEBUG = config('DEBUG', default=False, cast=bool)
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='').split(',')
+ALLOWED_HOSTS = [host.strip() for host in config('ALLOWED_HOSTS', default='').split(',') if host.strip()]
+
+# On Render, automatically allow the deployed service's own hostname so the
+# app never returns 400 Bad Request even if ALLOWED_HOSTS is unset.
+if config('RENDER', default=False, cast=bool):
+    render_host = config('RENDER_EXTERNAL_HOSTNAME', default=None)
+    if render_host:
+        ALLOWED_HOSTS += [render_host, f'.{render_host}']
 
 # Application definition
 
