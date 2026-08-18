@@ -11,6 +11,6 @@ services:
       - key: DEBUG
         value: "False"
       - key: ALLOWED_HOSTS
-        sync: false
+        value: ".onrender.com"
       - key: DATABASE_URL
         sync: false
